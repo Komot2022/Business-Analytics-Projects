@@ -1,0 +1,33 @@
+/* Generated Code (IMPORT) */
+/* Source File: cars.xlsx */
+/* Source Path: /home/u59528611 */
+/* Code generated on: 05/12/2022 19:09 */
+
+%web_drop_table(WORK.IMPORT);
+
+
+FILENAME REFFILE '/home/u59528611/cars.xlsx';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=XLSX
+	OUT=cars;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=cars; RUN;
+
+
+proc print data=cars (obs=50);
+
+run;
+
+
+proc univariate data=cars;
+var Min_Price Max_Price ;
+
+run;
+
+proc freq data=cars;
+table Domestic;
+
+run;
