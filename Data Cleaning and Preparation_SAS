@@ -1,0 +1,87 @@
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=XLSX
+	OUT=WORK.IMPORT;
+	GETNAMES=YES;
+RUN;
+
+PROC CONTENTS DATA=WORK.IMPORT; RUN;
+
+
+%web_open_table(WORK.IMPORT);
+
+
+libname mylib "/home/u59528611";
+
+*Question 1 Trim 10 percent from top and bottom of HR;
+
+
+proc rank data=work.import(keep=patno hr) out=tmp groups=10;
+var hr;
+ranks rank_hr;
+run;
+
+proc sort data=tmp;
+by rank_hr;
+run;
+
+proc means data=tmp;
+where rank_hr not in (0,9);
+var hr;
+run;
+
+%let hr_mean=80.1;
+%let hr_std=30.7;
+
+data _null_;
+file print;
+set work.import (keep=patno hr);
+Mult=1.49;
+if hr lt &hr_mean-2*Mult*&hr_std and not missing(hr)
+or hr gt &hr_mean+2*Mult*&hr_std then put
+patno= hr=;
+run;
+
+
+*Question 2 Detecting and Counting Values of 500 for Variable HR;
+
+data _null_;
+set work.import;
+file print;
+array Nums[*] _numeric_;
+length varname $32;
+do i=1 to dim(Nums);
+if Nums[i]=500 then do;
+varname=vname(Nums[i]);
+put "Value of 500 found for variable" varname
+"in observation" _n_;
+end;
+end;
+drop i;
+run;
+
+*Question 3 Code to remove distinct duplicates;
+
+proc print data=work.import; run;
+
+title "Detection of Patno_Duplicates";
+proc sql;
+select patno, visit
+from work.import
+group by patno
+having count(patno) gt 1;
+quit;
+
+proc sort data=work.import out=single nodupkey;
+by patno;
+run;
+
+title "Duplicates removed by nodupkey";
+proc print data=single;
+id patno;
+run;
+
+title "Distinct Duplicates removed by sql";
+proc sql;
+select distinct *
+from work.import;
+quit;
