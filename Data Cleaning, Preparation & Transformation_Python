@@ -1,0 +1,52 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+dataset= pd.read_csv('titanic.csv')
+dataset.head()
+dataset.isna().sum()
+dataset['Age'].fillna(dataset['Age'].median(), inplace = True)
+dataset.isna().sum()
+dataset.dropna(how='all')
+dataset.dropna(axis='columns')
+dataset.dropna(thresh=2)
+dataset['Age'].fillna(dataset.groupby(["Embarked"])['Age'].transform('mean'),inplace=True)
+dataset
+print(dataset.describe())
+print(dataset.describe(include = 'all'))
+dataset.dtypes
+dataset.replace({'Embarked':{'S':0,'C':1,'Q':2}}, inplace=True)
+dataset['Embarked'].fillna(dataset.groupby(["Embarked"])['Age'].transform('mean'),inplace=True)
+dataset.Age = dataset.Age.astype('int64')
+dataset.Fare = dataset.Fare.astype('int64')
+dataset.dtypes
+New_Data = dataset
+data = pd.get_dummies (New_Data["Sex"])
+data
+New_Data.head(5)
+New_Data.drop('Sex', axis='columns')
+New_Data["male"] = data["male"].to_list()
+New_Data["female"] = data["female"].to_list()
+New_Data.head(5)
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score, mean_squared_error
+from sklearn.preprocessing import StandardScaler
+X = New_Data.drop(columns = ['PassengerId','Name','Ticket','Survived', 'Sex','Cabin', 'Embarked'],axis=1)
+Y = New_Data['Survived']
+X.head()
+X.isna().sum()
+X.dtypes
+X_train, X_test, Y_train, Y_test = train_test_split(X,Y, test_size=0.3, random_state=2)
+X.shape
+X_train.shape
+X_test.shape
+lr_model = LogisticRegression()
+lr_model.fit(X_train, Y_train)
+Y_pred = lr_model.predict(X_test)
+from sklearn.metrics import classification_report, accuracy_score, mean_squared_error, confusion_matrix
+print(classification_report(Y_test, Y_pred))
+accuracy = accuracy_score(Y_test, Y_pred)
+print("Accuracy of the logistic regression model on test set:" + str(accuracy))
+mse = mean_squared_error(Y_test, Y_pred)
+print(mse)
+confusion_matrix(Y_test, Y_pred) 
