@@ -1,0 +1,9 @@
+{
+	"name": "komotdatafactory",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "22b46a7a-bd4f-47a6-bf20-07b9cee31d47",
+		"tenantId": "759d98a9-0401-44bd-976e-4827a5cdf648"
+	}
+}

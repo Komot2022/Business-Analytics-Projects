@@ -1,0 +1,211 @@
+{
+	"name": "dataflow_Dim",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Customer_table",
+						"type": "DatasetReference"
+					},
+					"name": "Customertable"
+				},
+				{
+					"dataset": {
+						"referenceName": "Product_table",
+						"type": "DatasetReference"
+					},
+					"name": "Productstream"
+				},
+				{
+					"dataset": {
+						"referenceName": "Productmosel_table",
+						"type": "DatasetReference"
+					},
+					"name": "Productmodelstream"
+				},
+				{
+					"dataset": {
+						"referenceName": "Productcategory_Table",
+						"type": "DatasetReference"
+					},
+					"name": "Productcategorystream"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Dimcustomer_table",
+						"type": "DatasetReference"
+					},
+					"name": "Dimcustomer"
+				},
+				{
+					"dataset": {
+						"referenceName": "Dimproduct_table",
+						"type": "DatasetReference"
+					},
+					"name": "DimProductstream"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Producttablejoinproductmodeltable"
+				},
+				{
+					"name": "joinProductcategory"
+				},
+				{
+					"name": "selectcolumns"
+				},
+				{
+					"name": "ProductSKStream"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CustomerID as integer,",
+				"          NameStyle as boolean,",
+				"          Title as string,",
+				"          FirstName as string,",
+				"          MiddleName as string,",
+				"          LastName as string,",
+				"          Suffix as string,",
+				"          CompanyName as string,",
+				"          SalesPerson as string,",
+				"          EmailAddress as string,",
+				"          Phone as string,",
+				"          PasswordHash as string,",
+				"          PasswordSalt as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> Customertable",
+				"source(output(",
+				"          ProductID as integer,",
+				"          Name as string,",
+				"          ProductNumber as string,",
+				"          Color as string,",
+				"          StandardCost as decimal(19,4),",
+				"          ListPrice as decimal(19,4),",
+				"          Size as string,",
+				"          Weight as decimal(8,2),",
+				"          ProductCategoryID as integer,",
+				"          ProductModelID as integer,",
+				"          SellStartDate as timestamp,",
+				"          SellEndDate as timestamp,",
+				"          DiscontinuedDate as timestamp,",
+				"          ThumbNailPhoto as binary,",
+				"          ThumbnailPhotoFileName as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> Productstream",
+				"source(output(",
+				"          ProductModelID as integer,",
+				"          Name as string,",
+				"          CatalogDescription as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> Productmodelstream",
+				"source(output(",
+				"          ProductCategoryID as integer,",
+				"          ParentProductCategoryID as integer,",
+				"          Name as string,",
+				"          rowguid as string,",
+				"          ModifiedDate as timestamp",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> Productcategorystream",
+				"Productstream, Productmodelstream join(Productstream@ProductModelID == Productmodelstream@ProductModelID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> Producttablejoinproductmodeltable",
+				"Producttablejoinproductmodeltable, Productcategorystream join(Productstream@ProductCategoryID == Productcategorystream@ProductCategoryID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinProductcategory",
+				"joinProductcategory select(mapColumn(",
+				"          ProductID,",
+				"          ProductName = Productstream@Name,",
+				"          ProductCategoryID = Productstream@ProductCategoryID,",
+				"          ProductModelID = Productstream@ProductModelID,",
+				"          ProductModelName = Productmodelstream@Name,",
+				"          ProductCategoryName = Productcategorystream@Name",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectcolumns",
+				"selectcolumns keyGenerate(output(ProductSK as long),",
+				"     startAt: 1L,",
+				"     stepValue: 1L) ~> ProductSKStream",
+				"Customertable sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          CustomerID as integer,",
+				"          CompanyName as string,",
+				"          SalesPerson as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CustomerID,",
+				"          CompanyName,",
+				"          SalesPerson",
+				"     )) ~> Dimcustomer",
+				"ProductSKStream sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     input(",
+				"          ProductSK as integer,",
+				"          ProductID as integer,",
+				"          ProductModelID as integer,",
+				"          ProductcategoryID as integer,",
+				"          ProductName as string,",
+				"          ProductModelName as string,",
+				"          ProductCategoryName as string",
+				"     ),",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     staged: true,",
+				"     allowCopyCommand: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          ProductSK,",
+				"          ProductID,",
+				"          ProductModelID,",
+				"          ProductcategoryID = ProductCategoryID,",
+				"          ProductName,",
+				"          ProductModelName,",
+				"          ProductCategoryName",
+				"     )) ~> DimProductstream"
+			]
+		}
+	}
+}

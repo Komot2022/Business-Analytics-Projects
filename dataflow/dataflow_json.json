@@ -1,0 +1,41 @@
+{
+	"name": "dataflow_json",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "logdata_Parquet",
+						"type": "DatasetReference"
+					},
+					"name": "logparquetstream"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "logdata_Json",
+						"type": "DatasetReference"
+					},
+					"name": "jsonstream"
+				}
+			],
+			"transformations": [],
+			"scriptLines": [
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'parquet') ~> logparquetstream",
+				"logparquetstream sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['Logdata_json'],",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> jsonstream"
+			]
+		}
+	}
+}
